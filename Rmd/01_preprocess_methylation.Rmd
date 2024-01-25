@@ -17,16 +17,20 @@ library(patchwork)
 
 ## Load files
 
-This fails:
-```{r cars}
-basenames <- list.files("data/idat/") %>%
+
+```{r}
+basenames <- list.files(here("data/idat/")) %>%
   str_split("_") %>%
   map(~ .[c(1:3)]) %>%
   map(~ str_flatten(., collapse = "_")) %>%
   unique() %>%
   unlist()
+```
 
-rgsets <- read.metharray(file.path("data/idat/", basenames), force = TRUE)
+This fails:
+```{r exec=FALSE}
+rgsets <-
+  read.metharray(file.path(here("data/idat/"), basenames), force = TRUE)
 ```
 
 So I took the file sizes it outputted to console and saved it to a file:
@@ -50,6 +54,8 @@ rm(rgsets_epic)
 gc()
 ```
 
+## Preprocess according to the paper
+
 _"The raw DNA methylation intensity data files (IDAT) were processed with the minfi package (23). We performed noob (Normal-exponential convolution using out-of-band probes) background correction (24) and dye bias correction using the minfi package (v 1.36.0) (23)."_
 
 _"A detection p-value also accompanies each data point and compares the signal intensity difference between the analytical probes and a set of negative control probes on the array. Any data point with a corresponding p-value greater than 1E-4 is deemed not to be statistically significantly different from background and was thus masked as “NA”."_
@@ -68,7 +74,7 @@ sum(pval > 1e-4)
 betas[] <- replace(x = betas, list = which(pval > 1e-4), values = NA)
 ```
 
-Checking out missing values
+## Checking out missing values
 
 ```{r}
 annot <- read.xlsx(here("data/can-23-2093_table_s1_suppst1.xlsx"))
@@ -106,6 +112,7 @@ mis_umap_tib <- left_join(mis_umap_tib, annot_full)
 ggplot(mis_umap_tib) +
   geom_point(aes(x = UMAP_1, y = UMAP_2, color = gender))
 ```
+
 Well, if the paper methods are to be followed as-is, they did not remove sex chromosomes. (Or crossreactive probes, for that matter.) I really hope they removed them for the actual analysis.
 
 ```{r}
@@ -116,6 +123,7 @@ betas_sexdropped <- betas[!which(rownames(betas) %in% sexprobes), ]
 ```
 
 Repeating the missing values inquiry (yes, shamelessly copy-pasting code.)
+
 ```{r}
 missing <- is.na(betas_sexdropped)
 miss_rows <- rowCounts(is.na(betas_sexdropped))
@@ -125,6 +133,7 @@ missing_betas <- betas_sexdropped[which(miss_rows > 0), which(miss_cols > 0)]
 missing_betas <- ifelse(is.na(missing_betas), 1, 0)
 sum(is.na(missing_betas))
 ```
+
 Oh! Apparently all the missing values were on the sex chromosomes. (Incl. the high p-values).
 Now I am really curious if the analysis results will be different with and without dropped sex chromosomes?
 
