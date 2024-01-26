@@ -28,7 +28,7 @@ basenames <- list.files(here("data/idat/")) %>%
 ```
 
 This fails:
-```{r exec=FALSE}
+```{r eval=FALSE}
 rgsets <-
   read.metharray(file.path(here("data/idat/"), basenames), force = TRUE)
 ```
