@@ -1,0 +1,53 @@
+---
+title: "Check publication files"
+author: "Tereza Lausová"
+date: "2024-01-26"
+output: html_document
+---
+
+```{r include=FALSE, echo = TRUE}
+library(minfi)
+library(tidyverse)
+library(here)
+```
+
+## Load data
+
+This are the beta csvs from https://https.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE248471.
+
+```{r}
+merged <- read_csv(here("data/GSE248471_beta_MergedGLASS.csv.gz"))
+epic <- read_csv(here("data/GSE248471_beta_epicGLASS.csv.gz"))
+meth_450k <- read_csv(here("data/GSE248471_beta_450GLASS.csv.gz"))
+```
+## 450k
+
+Sex probes still present even in the pre-processed betas.
+
+```{r}
+library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+sexprobes <- rownames(Locations)[which(Locations$chr %in% c("chrX", "chrY"))]
+
+any(sexprobes %in% meth_450k$probeID)
+sum(sexprobes %in% meth_450k$probeID)
+```
+## EPIC
+
+Sex probes still present.
+
+```{r}
+library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+sexprobes_ep <- rownames(Locations)[which(Locations$chr %in% c("chrX", "chrY"))]
+
+any(sexprobes_ep %in% epic$probeID)
+sum(sexprobes_ep %in% epic$probeID)
+```
+## Merged
+
+I don't know why the merged files are so short, maybe it's already been filtered?
+Regardless, there are still 27 sex probes in the shortlist.
+
+```{r}
+any(sexprobes %in% merged$probeID)
+sum(sexprobes %in% merged$probeID)
+```
